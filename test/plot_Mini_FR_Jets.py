@@ -51,6 +51,9 @@ EleVLooseMVA5 = ntuple_file.Get("againstElectronVLooseMVA5/Ntuple")
 EleLooseMVA5 = ntuple_file.Get("againstElectronLooseMVA5/Ntuple")
 EleMediumMVA5 = ntuple_file.Get("againstElectronMediumMVA5/Ntuple")
 
+NewDMF = ntuple_file.Get("decayModeFindingNewDMs/Ntuple")
+OldDMF = ntuple_file.Get("decayModeFinding/Ntuple")
+
 canvas = ROOT.TCanvas("asdf", "adsf", 800, 800)
 
 def make_plot(tree, variable, selection, binning, xaxis='', title=''):
@@ -98,8 +101,8 @@ def compare_efficiencies(ntuple1,legend1,ntuple2, legend2, variable, PtCut, binn
     frame = ROOT.TH1F("frame", "frame", *binning)
     l1 = produce_efficiency(ntuple1,variable, PtCut,binning, filename,ROOT.kMagenta-3)
     l2 = produce_efficiency(ntuple2,variable, PtCut,binning, filename,ROOT.kBlue-9)
-    frame.SetMaximum(.2)
-    frame.SetMinimum(.0001)
+    frame.SetMaximum(.5)
+    frame.SetMinimum(.0002)
     frame.SetTitle(title)
     frame.GetXaxis().SetTitle(xaxis)
     frame.GetYaxis().SetTitle(yaxis)
@@ -123,8 +126,8 @@ def compare_3efficiencies(ntuple1,legend1,ntuple2, legend2,ntuple3, legend3, var
     l1 = produce_efficiency(ntuple1,variable, PtCut,binning, filename,ROOT.kMagenta-3)
     l2 = produce_efficiency(ntuple2,variable, PtCut,binning, filename,ROOT.kBlue-9)
     l3 = produce_efficiency(ntuple3,variable, PtCut,binning, filename,ROOT.kRed+3)
-    frame.SetMaximum(.1)
-    frame.SetMinimum(.0001)
+    frame.SetMaximum(.05)
+    frame.SetMinimum(.0002)
     frame.SetTitle(title)
     frame.GetXaxis().SetTitle(xaxis)
     frame.GetYaxis().SetTitle(yaxis)
@@ -148,30 +151,51 @@ def compare_3efficiencies(ntuple1,legend1,ntuple2, legend2,ntuple3, legend3, var
 # Efficiency for a 20 GeV cut on tau Pt 
 ################################################################################
 ## pT plots
-compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','jetPt', 20, [20, 0, 120],#variable, ptcut, binning
+compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','jetPt', 20, [30, 0, 450],#variable, ptcut, binning
                     'tau_iso_fakeRate_pT_Jets',#filename
                     "Tau Fake Rate (Jets)",#title
                     "Jet p_{T} (GeV)",#xaxis
                     "fake rate" #yaxis             
 )
 
-compare_efficiencies(ntrlIsoPtSum,'neutralIsoPtSum',puCorrPtSum,'puCorrPtSum','jetPt',20,[20,0,120],
-                    'tau_PtSum_fakeRate_pT_Jets',
-                    "Tau Fake Rate (Jets)",
-                    "Jet p_{T} (GeV)",
+#compare_efficiencies(ntrlIsoPtSum,'neutralIsoPtSum',puCorrPtSum,'puCorrPtSum','jetPt',20,[20,0,450],
+#                    'tau_PtSum_fakeRate_pT_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "Jet p_{T} (GeV)",
+#                    "fake rate"
+#)
+#
+#compare_efficiencies(MuLoose3,'againstMuonLoose3',MuTight3,'againstMuonTight3','jetPt',20,[20,0,450],
+#                    'tau_Mu_fakeRate_pT_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "Jet p_{T} (GeV)",
+#                    "fake rate"
+#)
+#
+#compare_3efficiencies(EleVLooseMVA5,'againstElectronVLooseMVA5',EleLooseMVA5,'againstElectronLooseMVA5',EleMediumMVA5,'againstElectronMediumMVA5','jetPt',20,[20,0,450],
+#                    'tau_Ele_fakeRate_pT_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "Jet p_{T} (GeV)",
+#                    "fake rate"
+#)
+#
+#compare_3efficiencies(EleVLooseMVA5,'againstElectronVLooseMVA5',EleLooseMVA5,'againstElectronLooseMVA5',EleMediumMVA5,'againstElectronMediumMVA5','jetPt',20,[20,0,450],
+#                    'tau_Ele_fakeRate_pT_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "Jet p_{T} (GeV)",
+#                    "fake rate"
+#)
+
+compare_efficiencies(byLooseCmbIso3,'New DMF (loose)',OldDMF,'Old DMF (tight)','jetPt',20,[30,0,450],
+                    'tau_DMF_FR_pT',
+                    "Jet to Tau Fake Rate",
+                    "Jet Tau p_{T} (GeV)",
                     "fake rate"
 )
 
-compare_efficiencies(MuLoose3,'againstMuonLoose3',MuTight3,'againstMuonTight3','jetPt',20,[20,0,120],
-                    'tau_Mu_fakeRate_pT_Jets',
-                    "Tau Fake Rate (Jets)",
-                    "Jet p_{T} (GeV)",
-                    "fake rate"
-)
-
-compare_3efficiencies(EleVLooseMVA5,'againstElectronVLooseMVA5',EleLooseMVA5,'againstElectronLooseMVA5',EleMediumMVA5,'againstElectronMediumMVA5','jetPt',20,[20,0,120],
-                    'tau_Ele_fakeRate_pT_Jets',
-                    "Tau Fake Rate (Jets)",
+compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','jetPt',20,[30,0,450],
+                    'tau_isono_FR_pT',
+                    "Jet to Tau Fake Rate",
                     "Jet p_{T} (GeV)",
                     "fake rate"
 )
@@ -184,23 +208,30 @@ compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,
                     "fake rate" #yaxis             
 )
 
-compare_efficiencies(ntrlIsoPtSum,'neutralIsoPtSum',puCorrPtSum,'puCorrPtSum','jetEta',20,[20,-2.4,2.4],
-                    'tau_PtSum_fakeRate_eta_Jets',
-                    "Tau Fake Rate (Jets)",
-                    "Jet Eta",
-                    "fake rate"
-)
+#compare_efficiencies(ntrlIsoPtSum,'neutralIsoPtSum',puCorrPtSum,'puCorrPtSum','jetEta',20,[20,-2.4,2.4],
+#                    'tau_PtSum_fakeRate_eta_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "Jet Eta",
+#                    "fake rate"
+#)
 
-compare_efficiencies(MuLoose3,'againstMuonLoose3',MuTight3,'againstMuonTight3','jetEta',20,[20,-2.4,2.4],
-                    'tau_Mu_fakeRate_eta_Jets',
-                    "Tau Fake Rate (Jets)",
-                    "Jet Eta",
-                    "fake rate"
-)
+#compare_efficiencies(MuLoose3,'againstMuonLoose3',MuTight3,'againstMuonTight3','jetEta',20,[20,-2.4,2.4],
+#                    'tau_Mu_fakeRate_eta_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "Jet Eta",
+#                    "fake rate"
+#)
 
-compare_3efficiencies(EleVLooseMVA5,'againstElectronVLooseMVA5',EleLooseMVA5,'againstElectronLooseMVA5',EleMediumMVA5,'againstElectronMediumMVA5','jetEta',20,[20,-2.4,2.4],
-                    'tau_Ele_fakeRate_eta_Jets',
-                    "Tau Fake Rate (Jets)",
+#compare_3efficiencies(EleVLooseMVA5,'againstElectronVLooseMVA5',EleLooseMVA5,'againstElectronLooseMVA5',EleMediumMVA5,'againstElectronMediumMVA5','jetEta',20,[20,-2.4,2.4],
+#                    'tau_Ele_fakeRate_eta_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "Jet Eta",
+#                    "fake rate"
+#)
+
+compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','jetEta',20,[30,-2.4,2.4],
+                    'tau_isono_FR_eta',
+                    "Jet to Tau Fake Rate",
                     "Jet Eta",
                     "fake rate"
 )
@@ -213,23 +244,30 @@ compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,
                     "fake rate" #yaxis             
 )
 
-compare_efficiencies(ntrlIsoPtSum,'neutralIsoPtSum',puCorrPtSum,'puCorrPtSum','nvtx',20,[20,0,35],
-                    'tau_PtSum_fakeRate_nvtx_Jets',
-                    "Tau Fake Rate (Jets)",
-                    "N_{vtx}",
-                    "fake rate"
-)
+#compare_efficiencies(ntrlIsoPtSum,'neutralIsoPtSum',puCorrPtSum,'puCorrPtSum','nvtx',20,[20,0,35],
+#                    'tau_PtSum_fakeRate_nvtx_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "N_{vtx}",
+#                    "fake rate"
+#)
 
-compare_efficiencies(MuLoose3,'againstMuonLoose3',MuTight3,'againstMuonTight3','nvtx',20,[20,0,35],
-                    'tau_Mu_fakeRate_nvtx_Jets',
-                    "Tau Fake Rate (Jets)",
-                    "N_{vtx}",
-                    "fake rate"
-)
+#compare_efficiencies(MuLoose3,'againstMuonLoose3',MuTight3,'againstMuonTight3','nvtx',20,[20,0,35],
+#                    'tau_Mu_fakeRate_nvtx_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "N_{vtx}",
+#                    "fake rate"
+#)
 
-compare_3efficiencies(EleVLooseMVA5,'againstElectronVLooseMVA5',EleLooseMVA5,'againstElectronLooseMVA5',EleMediumMVA5,'againstElectronMediumMVA5','nvtx',20,[20,0,35],
-                    'tau_Ele_fakeRate_nvtx_Jets',
-                    "Tau Fake Rate (Jets)",
+#compare_3efficiencies(EleVLooseMVA5,'againstElectronVLooseMVA5',EleLooseMVA5,'againstElectronLooseMVA5',EleMediumMVA5,'againstElectronMediumMVA5','nvtx',20,[20,0,35],
+#                    'tau_Ele_fakeRate_nvtx_Jets',
+#                    "Tau Fake Rate (Jets)",
+#                    "N_{vtx}",
+#                    "fake rate"
+#)
+
+compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','nvtx',20,[30,0,35],
+                    'tau_isono_FR_nvtx',
+                    "Jet to Tau Fake Rate",
                     "N_{vtx}",
                     "fake rate"
 )

@@ -30,6 +30,15 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(options.inputFiles),
 )
 
+#whether running MC or data
+options.register(
+    'isMC',
+    1,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.int,
+    'Set to 1 for simulated samples - updates GT, emulates HCAL TPGs.'
+)
+
 ##################################################
 # Main
 process.byLooseCombinedIsolationDeltaBetaCorr3Hits = cms.EDAnalyzer("MiniAODfakeRate_alt",

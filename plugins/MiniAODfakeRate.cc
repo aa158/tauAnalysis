@@ -31,10 +31,10 @@
 // class declaration
 //
 
-class MiniAODfakeRate_alt : public edm::EDAnalyzer {
+class MiniAODfakeRate : public edm::EDAnalyzer {
 	public:
-		explicit MiniAODfakeRate_alt(const edm::ParameterSet&);
-		~MiniAODfakeRate_alt();
+		explicit MiniAODfakeRate(const edm::ParameterSet&);
+		~MiniAODfakeRate();
 
 	private:
 		virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
@@ -55,7 +55,8 @@ class MiniAODfakeRate_alt : public edm::EDAnalyzer {
 		Int_t genMatchedTau_;
 		Int_t isFake_;
 		Int_t tauIndex_;
-		Int_t dmf_;
+		Int_t oldDMF_;
+		Int_t newDMF_;
 		Int_t passDiscr_;
 		Float_t tauPt_;
 		Float_t tauEta_;
@@ -66,7 +67,7 @@ class MiniAODfakeRate_alt : public edm::EDAnalyzer {
 		double maxDR_;
 };
 
-MiniAODfakeRate_alt::MiniAODfakeRate_alt(const edm::ParameterSet& iConfig):
+MiniAODfakeRate::MiniAODfakeRate(const edm::ParameterSet& iConfig):
 	vtxToken_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
 	tauToken_(consumes<pat::TauCollection>(iConfig.getParameter<edm::InputTag>("taus"))),
 	jetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("jets")))
@@ -87,20 +88,21 @@ MiniAODfakeRate_alt::MiniAODfakeRate_alt(const edm::ParameterSet& iConfig):
 	tree->Branch("jetIDMed",&jetIDMed_,"jetIDMed/I");
 	tree->Branch("jetIDTight",&jetIDTight_,"jetIDTight/I");
 	tree->Branch("genMatchedTau",&genMatchedTau_,"genMatchedTau/I");
-	tree->Branch("dmf",&dmf_,"dmf/I");
+        tree->Branch("oldDMF", &oldDMF_,"oldDMF_/I");
+        tree->Branch("newDMF",&newDMF_,"newDMF_/I");
 	tree->Branch("isFake",&isFake_,"isFake/I");
 	tree->Branch("tauIndex",&tauIndex_,"tauIndex/I");
 	tree->Branch("passDiscr",&passDiscr_,"passDiscr/I");
 	tree->Branch("nvtx",&nvtx_,"nvtx/I");
-	maxDR_ = 0.4;
+	maxDR_ = 0.3;
 }
 
-MiniAODfakeRate_alt::~MiniAODfakeRate_alt()
+MiniAODfakeRate::~MiniAODfakeRate()
 {
 }
 
 	void
-MiniAODfakeRate_alt::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 	edm::Handle<reco::VertexCollection> vertices;
 	iEvent.getByToken(vtxToken_, vertices);
@@ -119,7 +121,8 @@ MiniAODfakeRate_alt::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	int tau_position=-1;
 	genMatchedTau_=0;
 	isFake_=0;
-	dmf_=0;
+	oldDMF_=0;
+	newDMF_=0;
 	passDiscr_=0;
 	tauPt_=-999;
 	tauEta_=-999;
@@ -137,21 +140,6 @@ MiniAODfakeRate_alt::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	std::vector <const reco::GenParticle*> used_GenTau_vec;
 
 	int iJet = -1;
-	jetIDLoose_=0;
-        jetIDMed_=0;
-        jetIDTight_=0;
-        tau_position=-1;
-        genMatchedTau_=0;
-        isFake_=0;
-        dmf_=0;
-        passDiscr_=0;
-        tauPt_=-999;
-        tauEta_=-999;
-        tauIndex_=-1;
-        jetRefPt_=-999;
-        jetPt_=-999;
-        jetEta_=-999;
-        jetRefEta_=-999;
         nvtx_=vertices->size();
 	for (const pat::Jet &jet : *jets) {
 		jetPt_=-999;
@@ -178,7 +166,8 @@ MiniAODfakeRate_alt::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
         tau_position=-1;
         genMatchedTau_=0;
         isFake_=0;
-        dmf_=0;
+        oldDMF_=0;
+	newDMF_=0;
         passDiscr_=0;
         tauPt_=-999;
         tauEta_=-999;
@@ -199,11 +188,47 @@ MiniAODfakeRate_alt::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 		jetIDTight_=0;
 		isFake_=0;
 		genMatchedTau_=0;
-		if (vertices->empty()) continue; // skip the tau if no PV found
 		//std::cout << "Analyzing Tau number " << tau_position << "\n";
-		bool pass_discr = tau.tauID(tauID_)>.5 && tau.tauID("againstElectronVLooseMVA5")>.5 && tau.tauID("againstMuonTight3");
-		bool pass_vert = (tau.vertex().z() - PV.z()) < .2; // && tau.dxy() < .045
-                if (tau.pt() > 20&&tau.eta()<2.3&& pass_discr && pass_vert) { // if the tau passes the critera
+		bool pass_discr = tau.tauID(tauID_)>.5; /*&& tau.tauID("againstElectronVLooseMVA5")>.5 && tau.tauID("againstMuonTight3");*/
+		bool loose_discr = tau.tauID("byLooseCombinedIsolationDeltaBetaCorr3Hits");
+		// bool pass_vert = (tau.vertex().z() - PV.z()) < .2; // && tau.dxy() < .045
+		newDMF_=tau.tauID("decayModeFindingNewDMs");
+		oldDMF_=tau.tauID("decayModeFinding");
+	    if (tauID_ == "decayModeFinding") {
+		if (tau.pt() > 20&&tau.eta()<2.3&& loose_discr && oldDMF_>.5) { // if the tau passes the critera
+                        passDiscr_=1;
+                        const reco::GenParticle* bestGenTau = findBestGenMatch(tau,GenTaus,maxDR_);
+                        const reco::GenParticle* bestGenEle = findBestGenMatch(tau,GenEles,maxDR_);
+                        const reco::GenParticle* bestGenMu = findBestGenMatch(tau,GenMus,maxDR_);
+                        const pat::Jet *jet = findBestJetMatch(tau,jet_denom_vec,maxDR_);
+                        //std::cout << "The best Gen Object is " << bestGenTau << "\n";
+                        //std::cout << "The size of Gen Obj is " << GenTaus.size() << "\n";
+                        if (bestGenTau != NULL) {
+                                GenTaus.erase(std::remove(GenTaus.begin(), GenTaus.end(), bestGenTau), GenTaus.end());
+                                continue;
+                        }
+                        else if (bestGenEle != NULL) {
+                                GenEles.erase(std::remove(GenEles.begin(), GenEles.end(), bestGenEle), GenEles.end());
+                                continue;
+                        } // end if tau is near a gen electron
+                        else if (bestGenMu != NULL) {
+                                GenMus.erase(std::remove(GenMus.begin(), GenMus.end(), bestGenMu), GenMus.end());
+                                continue;
+                        } // end if tau is near a gen object
+                        else if (jet != NULL) {
+                                isFake_=1;
+                                jetPt_=jet->pt();
+                                jetEta_=jet->eta();
+                                //jetIDLoose_=isLooseJet(*jet);
+                                //jetIDMed_=isMediumJet(*jet);
+                                //jetIDTight_=isTightJet(*jet);
+                                tree->Fill();
+                                jet_denom_vec.erase(std::remove(jet_denom_vec.begin(), jet_denom_vec.end(), jet), jet_denom_vec.end());
+                        } // end if tau is near a jet
+                }// end if tau meets pt, eta, discriminator cutoffs
+	    }
+	    else {
+		if (tau.pt() > 20&&tau.eta()<2.3&& pass_discr && newDMF_>.5) { // if the tau passes the critera
 			passDiscr_=1;
 			const reco::GenParticle* bestGenTau = findBestGenMatch(tau,GenTaus,maxDR_);
 			const reco::GenParticle* bestGenEle = findBestGenMatch(tau,GenEles,maxDR_);
@@ -234,7 +259,8 @@ MiniAODfakeRate_alt::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 				jet_denom_vec.erase(std::remove(jet_denom_vec.begin(), jet_denom_vec.end(), jet), jet_denom_vec.end());
 			} // end if tau is near a jet
                 }// end if tau meets pt, eta, discriminator cutoffs
+	    }
         } // end numerator for loop
 } // end analyze
 //define this as a plug-in
-DEFINE_FWK_MODULE(MiniAODfakeRate_alt);
+DEFINE_FWK_MODULE(MiniAODfakeRate);

@@ -31,4 +31,16 @@ bool isTightJet(const pat::Jet jet);
 const reco::GenParticle* findBestGenMatch(const pat::Tau& tauObj,std::vector<const reco::GenParticle*>& GenPart, double maxDR);
 const pat::Jet* findBestJetMatch(const pat::Tau& tauObj,std::vector<const pat::Jet*>& jet_denom_vec, double maxDR);
 int findBestGenMatchIndex(const pat::Tau& tauObj,std::vector<const reco::GenParticle*>& GenPart, double maxDR);
+bool goodVertex(const pat::Tau tau, const reco::Vertex PV);
+bool goodVertex(const reco::GenParticle* gen, const reco::Vertex PV);
+const pat::Tau* findBestTauMatch(const reco::GenParticle GenPart, edm::Handle<pat::TauCollection> taus, double maxDR);
+const reco::GenParticle* getGenTau(const pat::Tau& patTau);
+void countDecayProducts(const reco::GenParticle* genParticle,
+                          int& numElectrons, int& numElecNeutrinos, int& numMuons, int& numMuNeutrinos,
+                          int& numChargedHadrons, int& numPi0s, int& numOtherNeutralHadrons, int& numPhotons);
+std::string getGenTauDecayMode(const reco::GenParticle* genParticle);
+const int genDecayMode(const reco::GenParticle* genTau);
+const int highPtCharge(const pat::Tau &tau);
+const int sumCharge(const pat::Tau &recoTau);
 #endif
+
