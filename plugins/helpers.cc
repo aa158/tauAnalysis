@@ -494,12 +494,14 @@ const int sumCharge(const pat::Tau &recoTau)
 	for ( unsigned iTrack = 0; iTrack < signalTracks.size(); ++iTrack ) {
 		chargeSum = chargeSum + signalTracks[iTrack]->charge();
 	}
+
+	/*
 	if (recoTau.decayMode() == 5) {
 		for (unsigned iTrack = 0; iTrack < signalTracks.size(); ++iTrack ) {
-			std::cout << "pgID of sigcand is " << TMath::Abs(signalTracks[iTrack]->pdgId()) << "with charge " << signalTracks[iTrack]->charge() << std::endl;
+			//std::cout << "pgID of sigcand is " << TMath::Abs(signalTracks[iTrack]->pdgId()) << "with charge " << signalTracks[iTrack]->charge() << std::endl;
 		}
 		std::cout << "total charge is " << chargeSum << std::endl;
-	}
+	}*/
 
     return chargeSum;
 }

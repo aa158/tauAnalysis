@@ -16,6 +16,7 @@ from ROOT import THStack,TH1F,TFile
 from ROOT import TLegend,TCanvas,TPad,TLatex,TLine
 from ROOT import gROOT,gStyle
 
+import time
 
 # So things don't look like crap.
 ROOT.gROOT.SetStyle("Plain")
@@ -118,7 +119,7 @@ def compare_efficiencies(ntuple1,legend1,ntuple2,legend2, variable, PtCut,
     frame.Draw()
     l1.Draw('pe')
     l2.Draw('pesame')
-    legend = ROOT.TLegend(0.5, 0.6, 0.89, 0.8, "", "brNDC")
+    legend = ROOT.TLegend(0.5, 0.1, 0.89, 0.2, "", "brNDC")
     legend.SetFillColor(ROOT.kWhite)
     legend.SetBorderSize(1)
     legend.AddEntry(l1,legend1, "pe")
@@ -321,6 +322,69 @@ def compare_2masses(ntuple1,legend1,ntuple2, legend2, variable, PtCut,
     print saveas
     canvas.SaveAs(saveas)
 
+def make_sumPlot_mass(tree, variable1, variable2, selection, binning, xaxis='', title=''):
+    ''' Plot a variable using draw and return the histogram '''
+    draw_string = "(%s+%s)/1000000>>htemp(%s)" % (variable1,variable2, ", ".join(str(x) for x in binning))
+    tree.Draw(draw_string, selection, "goff")
+    output_histo = ROOT.gDirectory.Get("htemp").Clone()
+    output_histo.GetXaxis().SetTitle(xaxis)
+    output_histo.SetTitle(title)
+    return output_histo
+
+def sum_mass(ntuple,variable1,variable2, PtCut,selection,binning, filename,color, xaxis, title):
+    hist = make_sumPlot_mass(ntuple, variable1, variable2, selection,binning,xaxis, title)
+
+    rebin = 1
+    fcolor = 0 # ROOT.kGreen+1
+    lcolor = color
+    sf = 1
+    fillStyle = 1
+
+    hist.Rebin( rebin )
+    hist.SetFillColor( fcolor )
+    hist.SetLineColor( lcolor )
+    hist.SetLineWidth( 2 )
+    hist.Scale( sf )
+    max_hist = hist.GetMaximum()
+    #hist.GetYaxis().SetRangeUser(0,1.2*max_hist)
+
+    hist.SetMarkerColor(color)
+    return hist
+
+def reconstruct_genMass(ntuple,legend1, legend2, legend3, variable1, variable2, PtCut,
+                        selection,
+                        binning, filename,
+                        title='', xaxis='',yaxis=''):
+    frame = ROOT.TH1F("frame", "frame", *binning)
+    l1 = produce_mass(ntuple,variable1, PtCut,selection,binning, filename,ROOT.kMagenta-3,xaxis,title)
+    l2 = produce_mass(ntuple,variable2, PtCut,selection,binning, filename,ROOT.kBlue-9, xaxis, title)
+    l3 = sum_mass(ntuple,variable1,variable2, PtCut,selection,binning, filename,ROOT.kRed+3, xaxis, title)
+
+    frame.SetMaximum(1.2*l3.GetMaximum())
+
+    #frame.SetMaximum(1)
+    #frame.SetMinimum(0)
+    frame.GetXaxis().SetLabelSize(0.03)
+    frame.GetYaxis().SetLabelSize(0.03)
+    frame.GetYaxis().SetTitleOffset(1.5)
+    frame.SetTitle(title)
+    frame.GetXaxis().SetTitle(xaxis)
+    frame.GetYaxis().SetTitle(yaxis)
+    frame.Draw()
+    l1.Draw('ehist')
+    l2.Draw('ehistsame')
+    l3.Draw('ehistsame')
+    legend = ROOT.TLegend(0.1,0.75,0.28,0.9, "", "brNDC")
+    legend.SetFillColor(ROOT.kWhite)
+    legend.SetBorderSize(1)
+    legend.AddEntry(l1,legend1, "f")
+    legend.AddEntry(l2,legend2, "f")
+    legend.AddEntry(l3,legend3, "f")
+    legend.Draw('sames')
+    saveas = saveWhere+filename+'.png'
+    print saveas
+    canvas.SaveAs(saveas)
+
 def make_charge_plot(tree, variable, selection, binning, xaxis='', title=''):
     ''' Plot a variable using draw and return the histogram '''
     draw_string = "%s/genCharge>>htemp(%s)" % (variable, ", ".join(str(x) for x in binning))
@@ -432,7 +496,7 @@ compare_efficiencies(byLooseCmbIso3,'New DMF (loose)',OldDMF,'Old DMF (tight)','
 )
 
 compare_4efficiencies(byLooseCmbIso3,'kOneProng1PiZero (new DMF)',OldDMF,'kOneProng1PiZero (old DMF)',byLooseCmbIso3,'kThreeProng0PiZero (new DMF)',OldDMF,'kThreeProng0PiZero (old DMF)','genPt',20,
-		    "goodReco==1 && tauDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && tauDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && genDecayMode==10","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && genDecayMode==10",
+		    "goodReco==1 && genDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && genDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && genDecayMode==10","genMatchedTau==1 && genDecayMode==10","goodReco==1 && genDecayMode==10","genMatchedTau==1 && genDecayMode==10",
 		    [30,0,450],
 		    'decayMode_DMF_effi_pT',
 		    "Tau Efficiency",
@@ -441,7 +505,7 @@ compare_4efficiencies(byLooseCmbIso3,'kOneProng1PiZero (new DMF)',OldDMF,'kOnePr
 )
 
 compare_3efficiencies(byLooseCmbIso3,'kOneProng0PiZero',byLooseCmbIso3,'kOneProng1PiZero',byLooseCmbIso3,'kThreeProng0PiZero','genPt',20,
-                    "goodReco==1 && tauDecayMode==0","genMatchedTau==1 && tauDecayMode==0","goodReco==1 && tauDecayMode==1","genMatchedTau==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && tauDecayMode==10",
+                    "goodReco==1 && genDecayMode==0","genMatchedTau==1 && genDecayMode==0","goodReco==1 && genDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && genDecayMode==10","genMatchedTau==1 && genDecayMode==10",
                     [30,0,450],
                     'decayMode_looseNewDMF_effi_pT',
                     "Tau Efficiency",
@@ -450,7 +514,7 @@ compare_3efficiencies(byLooseCmbIso3,'kOneProng0PiZero',byLooseCmbIso3,'kOnePron
 )
 
 compare_3efficiencies(OldDMF,'kOneProng0PiZero',OldDMF,'kOneProng1PiZero',OldDMF,'kThreeProng0PiZero','genPt',20,
-                    "goodReco==1 && tauDecayMode==0","genMatchedTau==1 && tauDecayMode==0","goodReco==1 && tauDecayMode==1","genMatchedTau==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && tauDecayMode==10",
+                    "goodReco==1 && genDecayMode==0","genMatchedTau==1 && genDecayMode==0","goodReco==1 && genDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && genDecayMode==10","genMatchedTau==1 && genDecayMode==10",
                     [30,0,450],
                     'decayMode_looseOldDMF_effi_pT',
                     "Tau Efficiency",
@@ -459,7 +523,7 @@ compare_3efficiencies(OldDMF,'kOneProng0PiZero',OldDMF,'kOneProng1PiZero',OldDMF
 )
 
 compare_3efficiencies(NewDMF,'kOneProng0PiZero',NewDMF,'kOneProng1PiZero',NewDMF,'kThreeProng0PiZero','genPt',20,
-                    "goodReco==1 && tauDecayMode==0","genMatchedTau==1 && tauDecayMode==0","goodReco==1 && tauDecayMode==1","genMatchedTau==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && tauDecayMode==10",
+                    "goodReco==1 && genDecayMode==0","genMatchedTau==1 && genDecayMode==0","goodReco==1 && genDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && genDecayMode==10","genMatchedTau==1 && genDecayMode==10",
                     [30,0,450],
                     'decayMode_nocutNewDMF_effi_pT',
                     "Tau Efficiency",
@@ -468,7 +532,7 @@ compare_3efficiencies(NewDMF,'kOneProng0PiZero',NewDMF,'kOneProng1PiZero',NewDMF
 )
 
 compare_efficiencies(byLooseCmbIso3,'kOneProng2PiZero',byLooseCmbIso3,'kThreeProng1PiZero','genPt',20,
-                    "goodReco==1 && tauDecayMode==2","genMatchedTau==1 && tauDecayMode==2","goodReco==1 && tauDecayMode==11","genMatchedTau==1 && tauDecayMode==11",
+                    "goodReco==1 && genDecayMode==2","genMatchedTau==1 && genDecayMode==2","goodReco==1 && genDecayMode==11","genMatchedTau==1 && genDecayMode==11",
                     [30,0,450],
                     'decayMode_badModesLoose_effi_pT',
                     "Tau Efficiency",
@@ -477,7 +541,7 @@ compare_efficiencies(byLooseCmbIso3,'kOneProng2PiZero',byLooseCmbIso3,'kThreePro
 )
 
 compare_efficiencies(OldDMF,'kOneProng2PiZero',OldDMF,'kThreeProng1PiZero','genPt',20,
-                    "goodReco==1 && tauDecayMode==2","genMatchedTau==1 && tauDecayMode==2","goodReco==1 && tauDecayMode==11","genMatchedTau==1 && tauDecayMode==11",
+                    "goodReco==1 && genDecayMode==2","genMatchedTau==1 && genDecayMode==2","goodReco==1 && genDecayMode==11","genMatchedTau==1 && genDecayMode==11",
                     [30,0,450],
                     'decayMode_badModesOld_effi_pT',
                     "Tau Efficiency",
@@ -486,7 +550,7 @@ compare_efficiencies(OldDMF,'kOneProng2PiZero',OldDMF,'kThreeProng1PiZero','genP
 )
 
 compare_efficiencies(NewDMF,'kOneProng2PiZero',NewDMF,'kThreeProng1PiZero','genPt',20,
-                    "goodReco==1 && tauDecayMode==2","genMatchedTau==1 && tauDecayMode==2","goodReco==1 && tauDecayMode==11","genMatchedTau==1 && tauDecayMode==11",
+                    "goodReco==1 && genDecayMode==2","genMatchedTau==1 && genDecayMode==2","goodReco==1 && genDecayMode==11","genMatchedTau==1 && genDecayMode==11",
                     [30,0,450],
                     'decayMode_badModesNew_effi_pT',
                     "Tau Efficiency",
@@ -510,7 +574,7 @@ plot_ratio(byLooseCmbIso3,'Loose Iso Cut (New DMF)', 'genPt', 'ratioPt',
 
 #compare_4masses(byLooseCmbIso3,'kOneProng1PiZero (new DMF)',OldDMF,'kOneProng1PiZero (old DMF)',byLooseCmbIso3,'kThreeProng0PiZero (new DMF)',OldDMF,'kThreeProng0PiZero (old DMF)',
 #                    'tauMass',20,
-#                    "goodReco==1 && tauDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && tauDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && genDecayMode==10","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && genDecayMode==10",
+#                    "goodReco==1","genMatchedTau==1 && genDecayMode==1","goodReco==1","genMatchedTau==1 && genDecayMode==1","goodReco==1","genMatchedTau==1 && genDecayMode==10","goodReco==1","genMatchedTau==1 && genDecayMode==10",
 #                    [30,0,450],
 #                    'decayMode_DMF_effi_pT',
 #                    "Tau Efficiency",
@@ -519,14 +583,14 @@ plot_ratio(byLooseCmbIso3,'Loose Iso Cut (New DMF)', 'genPt', 'ratioPt',
 #)
 
 ## eta plots
-compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','genEta', 20,
-		    "goodReco==1","genMatchedTau==1","goodReco==1","genMatchedTau==1","goodReco==1","genMatchedTau==1",
-		    [20,-2.4,2.4],#variable, ptcut, binning
-                    'iso_effi_eta',#filename
-                    "Tau Efficiency",#title
-                    "gen Tau Eta",#xaxis
-                    "efficiency" #yaxis             
-)
+#compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','genEta', 20,
+#		    "goodReco==1","genMatchedTau==1","goodReco==1","genMatchedTau==1","goodReco==1","genMatchedTau==1",
+#		    [20,-2.4,2.4],#variable, ptcut, binning
+#                    'iso_effi_eta',#filename
+#                    "Tau Efficiency",#title
+#                    "gen Tau Eta",#xaxis
+#                    "efficiency" #yaxis             
+#)
 
 #compare_efficiencies(ntrlIsoPtSum,'neutralIsoPtSum',puCorrPtSum,'puCorrPtSum','genEta',20,
 #	            "goodReco==1","genMatchedTau==1","goodReco==1","genMatchedTau==1",
@@ -554,24 +618,24 @@ compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,
 #                    "gen Tau Eta",
 #                    "efficiency"
 #)
-compare_4efficiencies(byLooseCmbIso3,'kOneProng0PiZero',byLooseCmbIso3,'kOneProng1PiZero',byLooseCmbIso3,'kTwoProng0PiZero',byLooseCmbIso3,'kThreeProng0PiZero',
-		    'genEta',20,
-		    "goodReco==1 && tauDecayMode==0","genMatchedTau==1 && genDecayMode==0","goodReco==1 && tauDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && tauDecayMode==5","genMatchedTau==1 && genDecayMode==5","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && genDecayMode==10",
-		    [30,-2.4,2.4],
-                    'decayMode_effi_eta',
-                    "Tau Efficiency",
-                    "gen Tau Eta",
-                    "efficiency"
-)
+#compare_4efficiencies(byLooseCmbIso3,'kOneProng0PiZero',byLooseCmbIso3,'kOneProng1PiZero',byLooseCmbIso3,'kTwoProng0PiZero',byLooseCmbIso3,'kThreeProng0PiZero',
+#		    'genEta',20,
+#		    "goodReco==1 && genDecayMode==0","genMatchedTau==1 && genDecayMode==0","goodReco==1 && genDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && genDecayMode==5","genMatchedTau==1 && genDecayMode==5","goodReco==1 && genDecayMode==10","genMatchedTau==1 && genDecayMode==10",
+#		    [30,-2.4,2.4],
+#                    'decayMode_effi_eta',
+#                    "Tau Efficiency",
+#                    "gen Tau Eta",
+#                    "efficiency"
+#)
 
-compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','genEta',20,
-		    "goodReco==1","genMatchedTau==1","goodReco==1","genMatchedTau==1",
-	            [30,-2.4,2.4],
-                    'isono_effi_eta',
-                    "Tau Efficiency",
-                    "gen Tau Eta",
-                    "efficiency"
-)
+#compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','genEta',20,
+#		    "goodReco==1","genMatchedTau==1","goodReco==1","genMatchedTau==1",
+#	            [30,-2.4,2.4],
+#                    'isono_effi_eta',
+#                    "Tau Efficiency",
+#                    "gen Tau Eta",
+#                    "efficiency"
+#)
 
 ## nvtx plots
 compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','nvtx', 20,
@@ -611,7 +675,7 @@ compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,
 
 compare_4efficiencies(byLooseCmbIso3,'kOneProng0PiZero',byLooseCmbIso3,'kOneProng1PiZero',byLooseCmbIso3,'kTwoProng0PiZero',byLooseCmbIso3,'kThreeProng0PiZero',
 		    'nvtx',20,
-		    "goodReco==1 && tauDecayMode==0","genMatchedTau==1 && genDecayMode==0","goodReco==1 && tauDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && tauDecayMode==5","genMatchedTau==1 && genDecayMode==5","goodReco==1 && tauDecayMode==10","genMatchedTau==1 && genDecayMode==10",
+		    "goodReco==1 && genDecayMode==0","genMatchedTau==1 && genDecayMode==0","goodReco==1 && genDecayMode==1","genMatchedTau==1 && genDecayMode==1","goodReco==1 && genDecayMode==5","genMatchedTau==1 && genDecayMode==5","goodReco==1 && genDecayMode==10","genMatchedTau==1 && genDecayMode==10",
 		    [30,0,35],
                     'decayMode_effi_nvtx',
                     "Tau Efficiency",
@@ -650,15 +714,15 @@ compare_2masses(byLooseCmbIso3,'Reco Tau (New DMF)',OldDMF,'Reco Tau (Old DMF)',
                         "Events"
 )
 
-compare_2masses(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (tight)',
-                        'tauMass', 20,
-                        "goodReco==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==1",
-                        [101,970,1070],
-                        '1P1pi_tauMass',
-                        "Reco Tau Mass: kOneProng1PiZero",
-                        "Reco Tau Mass (MeV)",
-                        "Events"
-)
+#compare_2masses(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (tight)',
+#                        'tauMass', 20,
+#                        "goodReco==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==1",
+#                        [101,970,1070],
+#                        '1P1pi_tauMass',
+#                        "Reco Tau Mass: kOneProng1PiZero",
+#                        "Reco Tau Mass (MeV)",
+#                        "Events"
+#)
 
 compare_2masses(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)','tauMass', 20,
                         "goodReco==1 && tauDecayMode==5","goodReco==1 && tauDecayMode==5",
@@ -729,6 +793,12 @@ compare_2masses(byLooseCmbIso3,'Gen Tau Mass',OldDMF,'Gen Tau Mass',
                         "Events"
 )
 
+#reconstruct_genMass(byLooseCmbIso3,'Visible Mass', 'Neutrino Mass', 'Total Mass', 'genMass', 'genNuMass', 20,
+#                       	"genMatchedTau==1",
+#                        [101,970,1070],
+#			'genMass_sum',
+#                        "Gen Tau Mass (loose iso cut)", "Mass (MeV)", "Events")
+
 ## Charge plots
 
 compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
@@ -791,45 +861,47 @@ compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
                         "Events"
 )
 
-compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
-                        'tauChargePt', 20,
-                        "goodReco==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==1",
-                        [50,-6,6],
-                        '1P1pi_chargePt',
-                        "Tau Charge (High Pt Track): kOneProng1PiZero",
-                        "Tau Charge / Gen Charge",
-                        "Events"
-)
+#compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
+#                        'tauChargePt', 20,
+#                        "goodReco==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==1",
+#                        [50,-6,6],
+#                        '1P1pi_chargePt',
+#                        "Tau Charge (High Pt Track): kOneProng1PiZero",
+#                        "Tau Charge / Gen Charge",
+#                        "Events"
+#)
 
-compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
-                        'tauChargeSum', 20,
-                        "goodReco==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==1",
-                        [50,-6,6],
-                        '1P1pi_chargeSum',
-                        "Tau Charge (Sum of Tracks): kOneProng1PiZero",
-                        "Tau Charge / Gen Charge",
-                        "Events"
-)
+#compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
+#                        'tauChargeSum', 20,
+#                        "goodReco==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==1",
+#                        [50,-6,6],
+#                        '1P1pi_chargeSum',
+#                        "Tau Charge (Sum of Tracks): kOneProng1PiZero",
+#                        "Tau Charge / Gen Charge",
+#                        "Events"
+#)
 
-compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
-                        'tauChargeDirect', 20,
-                        "goodReco==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==1",
-                        [50,-6,6],
-                        '1P1pi_chargeDirect',
-                        "Tau Charge (tau.charge()): kOneProng1PiZero",
-                        "Tau Charge / Gen Charge",
-                        "Events"
-)
+#compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
+#                        'tauChargeDirect', 20,
+#                        "goodReco==1 && tauDecayMode==1","goodReco==1 && tauDecayMode==1",
+#                        [50,-6,6],
+#                        '1P1pi_chargeDirect',
+#                        "Tau Charge (tau.charge()): kOneProng1PiZero",
+#                        "Tau Charge / Gen Charge",
+#                        "Events"
+#)
 
 compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
                         'tauChargePt', 20,
                         "goodReco==1 && tauDecayMode==10","goodReco==1 && tauDecayMode==10",
                         [50,-6,6],
                         '3P0pi_chargePt',
-                        "Tau Charge (High Pt Track): kOneProng1PiZero",
+                        "Tau Charge (High Pt Track): kThreeProng0PiZero",
                         "Tau Charge / Gen Charge",
                         "Events"
 )
+
+time.sleep(1)
 
 compare_2charge(byLooseCmbIso3,'New DMF (Loose)',OldDMF,'Old DMF (Tight)',
                         'tauChargeSum', 20,
@@ -856,6 +928,36 @@ compare_2charge(byLooseCmbIso3,'highest pt track',byLooseCmbIso3,'sum of tracks'
                         "abs(tauChargePt)>1","abs(tauChargePt)>1",
                         [100,-10,10],
                         'decayMode_forCharge2',
+                        "Tau decay mode",
+                        "Tau decay mode",
+                        "Events"
+)
+
+compare_2charge(byLooseCmbIso3,'OneProng0PiZero',byLooseCmbIso3,'all',
+                        'tauPt', 20,
+                        "goodReco==1  && (tauChargeDirect/genCharge) == -1","goodReco==1 && (tauChargeDirect/genCharge)==-1",
+                        [100,-450,450],
+                        'bad_charges_byPt',
+                        "Tau decay mode",
+                        "Tau decay mode",
+                        "Events"
+)
+
+compare_2charge(byLooseCmbIso3,'OneProng0PiZero',byLooseCmbIso3,'all',
+                        'tauEta', 20,
+                        "goodReco==1  && (tauChargeDirect/genCharge) == -1","goodReco==1 && (tauChargeDirect/genCharge)==-1",
+                        [100,-2.4,2.4],
+                        'bad_charges_byEta',
+                        "Tau decay mode",
+                        "Tau decay mode",
+                        "Events"
+)
+
+compare_2charge(byLooseCmbIso3,'OneProng0PiZero',byLooseCmbIso3,'all',
+                        'nvtx', 20,
+                        "goodReco==1  && (tauChargeDirect/genCharge) == -1","goodReco==1 && (tauChargeDirect/genCharge)==-1",
+                        [100,-35,35],
+                        'bad_charges_byNvtx',
                         "Tau decay mode",
                         "Tau decay mode",
                         "Events"

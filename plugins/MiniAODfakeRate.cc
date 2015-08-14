@@ -58,6 +58,7 @@ class MiniAODfakeRate : public edm::EDAnalyzer {
 		Int_t oldDMF_;
 		Int_t newDMF_;
 		Int_t passDiscr_;
+		Int_t decayMode_;
 		Float_t tauPt_;
 		Float_t tauEta_;
 		Float_t jetRefEta_;
@@ -94,6 +95,7 @@ MiniAODfakeRate::MiniAODfakeRate(const edm::ParameterSet& iConfig):
 	tree->Branch("tauIndex",&tauIndex_,"tauIndex/I");
 	tree->Branch("passDiscr",&passDiscr_,"passDiscr/I");
 	tree->Branch("nvtx",&nvtx_,"nvtx/I");
+	tree->Branch("decayMode",&decayMode_,"nvtx/I");
 	maxDR_ = 0.3;
 }
 
@@ -134,6 +136,7 @@ MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 	jetIDLoose_=0;
 	jetIDMed_=0;
 	jetIDTight_=0;
+	decayMode_=-1;
 
 	std::vector <int> tau_position_vec;
 	std::vector <const pat::Jet*> jet_denom_vec;
@@ -148,9 +151,7 @@ MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
                 jetIDMed_=0;
                 jetIDTight_=0;
                 iJet++;
-		//	pass_vert = (jet.vertex().z() - PV.z()) < .2 && tau.dxy() < .045
 		if (jet.pt() > 20&&jet.eta()<2.3&&(isLooseJet(jet))) {
-                //std::cout << "The Jet PT is >20, jetEta<2.3, it is loose \n";
         	        jetPt_=jet.pt();
                 	jetEta_=jet.eta();
                 	jetIDLoose_=isLooseJet(jet);
@@ -176,11 +177,11 @@ MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
         jetPt_=-999;
         jetEta_=-999;
         jetRefEta_=-999;
-	//std::cout << "Analyzing a new event\n";
         for (const pat::Tau &tau : *taus) {
                 tau_position++;
 		tauPt_=tau.pt();
 		tauEta_=tau.eta();
+		decayMode_=tau.decayMode();
 		jetPt_=-999;
 		jetEta_=-999;
 		jetIDLoose_=0;
@@ -188,10 +189,8 @@ MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 		jetIDTight_=0;
 		isFake_=0;
 		genMatchedTau_=0;
-		//std::cout << "Analyzing Tau number " << tau_position << "\n";
 		bool pass_discr = tau.tauID(tauID_)>.5; /*&& tau.tauID("againstElectronVLooseMVA5")>.5 && tau.tauID("againstMuonTight3");*/
 		bool loose_discr = tau.tauID("byLooseCombinedIsolationDeltaBetaCorr3Hits");
-		// bool pass_vert = (tau.vertex().z() - PV.z()) < .2; // && tau.dxy() < .045
 		newDMF_=tau.tauID("decayModeFindingNewDMs");
 		oldDMF_=tau.tauID("decayModeFinding");
 	    if (tauID_ == "decayModeFinding") {
@@ -201,8 +200,6 @@ MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
                         const reco::GenParticle* bestGenEle = findBestGenMatch(tau,GenEles,maxDR_);
                         const reco::GenParticle* bestGenMu = findBestGenMatch(tau,GenMus,maxDR_);
                         const pat::Jet *jet = findBestJetMatch(tau,jet_denom_vec,maxDR_);
-                        //std::cout << "The best Gen Object is " << bestGenTau << "\n";
-                        //std::cout << "The size of Gen Obj is " << GenTaus.size() << "\n";
                         if (bestGenTau != NULL) {
                                 GenTaus.erase(std::remove(GenTaus.begin(), GenTaus.end(), bestGenTau), GenTaus.end());
                                 continue;
@@ -219,9 +216,6 @@ MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
                                 isFake_=1;
                                 jetPt_=jet->pt();
                                 jetEta_=jet->eta();
-                                //jetIDLoose_=isLooseJet(*jet);
-                                //jetIDMed_=isMediumJet(*jet);
-                                //jetIDTight_=isTightJet(*jet);
                                 tree->Fill();
                                 jet_denom_vec.erase(std::remove(jet_denom_vec.begin(), jet_denom_vec.end(), jet), jet_denom_vec.end());
                         } // end if tau is near a jet
@@ -234,8 +228,6 @@ MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 			const reco::GenParticle* bestGenEle = findBestGenMatch(tau,GenEles,maxDR_);
 			const reco::GenParticle* bestGenMu = findBestGenMatch(tau,GenMus,maxDR_);
 			const pat::Jet *jet = findBestJetMatch(tau,jet_denom_vec,maxDR_);
-			//std::cout << "The best Gen Object is " << bestGenTau << "\n";
-			//std::cout << "The size of Gen Obj is " << GenTaus.size() << "\n";
 			if (bestGenTau != NULL) {
 				GenTaus.erase(std::remove(GenTaus.begin(), GenTaus.end(), bestGenTau), GenTaus.end());
 				continue;
@@ -252,9 +244,6 @@ MiniAODfakeRate::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 				isFake_=1;
 				jetPt_=jet->pt();
 				jetEta_=jet->eta();
-				//jetIDLoose_=isLooseJet(*jet);
-				//jetIDMed_=isMediumJet(*jet);
-				//jetIDTight_=isTightJet(*jet);
 				tree->Fill();
 				jet_denom_vec.erase(std::remove(jet_denom_vec.begin(), jet_denom_vec.end(), jet), jet_denom_vec.end());
 			} // end if tau is near a jet

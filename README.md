@@ -32,3 +32,5 @@ source farmout.sh [JOB_NAME] #for standard isolation cones
 python plot.py [effi].root label[optional]
 python plotFR.py [fakeRate].root label[optional]
 ```
+
+Please note, the dataMCcomp plugin is running but the corresponding plotting script is under construction.

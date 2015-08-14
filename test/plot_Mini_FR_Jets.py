@@ -73,34 +73,34 @@ def make_efficiency(denom, num):
     eff.SetLineColor(ROOT.kBlack)
     return eff
 
-def make_num(ntuple, variable,PtCut,binning):
+def make_num(ntuple, variable,PtCut, selection, binning):
     num = make_plot(
         ntuple, variable,
-	"isFake",
+	selection, #isFake==1",
         binning
     )
     return num
 
-def make_denom(ntuple, variable,PtCut,binning):
+def make_denom(ntuple, variable,PtCut, selection, binning):
     denom = make_plot(
         ntuple, variable,
-        "jetIDLoose",
+        selection, #"jetIDLoose==1",
         binning
     )
     return denom
 
-def produce_efficiency(ntuple, variable, PtCut,binning, filename,color):
-    denom = make_denom(ntuple, variable,PtCut,binning)
-    num = make_num(ntuple,variable,PtCut,binning)
+def produce_efficiency(ntuple, variable, PtCut,selection_num, selection_denom,binning, filename,color):
+    denom = make_denom(ntuple, variable,PtCut,selection_denom,binning)
+    num = make_num(ntuple,variable,PtCut,selection_num,binning)
     l1 = make_efficiency(denom,num)
     l1.SetMarkerColor(color)
     return l1
 
-def compare_efficiencies(ntuple1,legend1,ntuple2, legend2, variable, PtCut, binning, filename,
+def compare_efficiencies(ntuple1,legend1,ntuple2, legend2, variable, PtCut,selection1_num, selection1_denom,selection2_num, selection2_denom, binning, filename,
                          title='', xaxis='',yaxis=''):
     frame = ROOT.TH1F("frame", "frame", *binning)
-    l1 = produce_efficiency(ntuple1,variable, PtCut,binning, filename,ROOT.kMagenta-3)
-    l2 = produce_efficiency(ntuple2,variable, PtCut,binning, filename,ROOT.kBlue-9)
+    l1 = produce_efficiency(ntuple1,variable, PtCut,selection1_num, selection1_denom,binning, filename,ROOT.kMagenta-3)
+    l2 = produce_efficiency(ntuple2,variable, PtCut,selection2_num, selection2_denom,binning, filename,ROOT.kBlue-9)
     frame.SetMaximum(.5)
     frame.SetMinimum(.0002)
     frame.SetTitle(title)
@@ -115,17 +115,17 @@ def compare_efficiencies(ntuple1,legend1,ntuple2, legend2, variable, PtCut, binn
     legend.SetBorderSize(1)
     legend.AddEntry(l1,legend1, "pe")
     legend.AddEntry(l2,legend2, "pe")
-    legend.Draw()
+    #legend.Draw()
     saveas = saveWhere+filename+'.png'
     print saveas
     canvas.SaveAs(saveas)
 
-def compare_3efficiencies(ntuple1,legend1,ntuple2, legend2,ntuple3, legend3, variable, PtCut, binning, filename,
+def compare_3efficiencies(ntuple1,legend1,ntuple2, legend2,ntuple3, legend3, variable, PtCut,selection1_num,selection1_denom,selection2_num, selection2_denom,selection3_num, selection3_denom, binning, filename,
                          title='', xaxis='',yaxis=''):
     frame = ROOT.TH1F("frame", "frame", *binning)
-    l1 = produce_efficiency(ntuple1,variable, PtCut,binning, filename,ROOT.kMagenta-3)
-    l2 = produce_efficiency(ntuple2,variable, PtCut,binning, filename,ROOT.kBlue-9)
-    l3 = produce_efficiency(ntuple3,variable, PtCut,binning, filename,ROOT.kRed+3)
+    l1 = produce_efficiency(ntuple1,variable, PtCut,selection1_num, selection1_denom, binning, filename,ROOT.kMagenta-3)
+    l2 = produce_efficiency(ntuple2,variable, PtCut,selection2_num, selection2_denom, binning, filename,ROOT.kBlue-9)
+    l3 = produce_efficiency(ntuple3,variable, PtCut,selection3_num, selection3_denom, binning, filename,ROOT.kRed+3)
     frame.SetMaximum(.05)
     frame.SetMinimum(.0002)
     frame.SetTitle(title)
@@ -142,7 +142,39 @@ def compare_3efficiencies(ntuple1,legend1,ntuple2, legend2,ntuple3, legend3, var
     legend.AddEntry(l1,legend1, "pe")
     legend.AddEntry(l2,legend2, "pe")
     legend.AddEntry(l3,legend3, "pe")
-    legend.Draw()
+    #legend.Draw()
+    saveas = saveWhere+filename+'.png'
+    print saveas
+    canvas.SaveAs(saveas)
+
+def compare_4efficiencies(ntuple1,legend1,ntuple2, legend2,ntuple3, legend3, ntuple4, legend4, variable, PtCut,
+			selection1_num,selection1_denom,selection2_num,selection2_denom,selection3_num,selection3_denom,selection4_num,selection4_denom,
+			binning, filename,
+                        title='', xaxis='',yaxis=''):
+    frame = ROOT.TH1F("frame", "frame", *binning)
+    l1 = produce_efficiency(ntuple1,variable, PtCut, selection1_num, selection1_denom, binning, filename,ROOT.kMagenta-3)
+    l2 = produce_efficiency(ntuple2,variable, PtCut, selection2_num, selection2_denom, binning, filename,ROOT.kBlue-9)
+    l3 = produce_efficiency(ntuple3,variable, PtCut, selection3_num, selection3_denom, binning, filename,ROOT.kRed+3)
+    l4 = produce_efficiency(ntuple3,variable, PtCut, selection4_num, selection4_denom, binning, filename,ROOT.kRed-3)
+    frame.SetMaximum(.05)
+    frame.SetMinimum(.0002)
+    frame.SetTitle(title)
+    frame.GetXaxis().SetTitle(xaxis)
+    frame.GetYaxis().SetTitle(yaxis)
+    frame.Draw()
+    l1.Draw('pe')
+    l2.Draw('pesame')
+    l3.Draw('pesame')
+    l4.Draw('pesame')
+    canvas.SetLogy()
+    legend = ROOT.TLegend(0.5, 0.7, 0.95, 0.9, "", "brNDC")
+    legend.SetFillColor(ROOT.kWhite)
+    legend.SetBorderSize(1)
+    legend.AddEntry(l1,legend1, "pe")
+    legend.AddEntry(l2,legend2, "pe")
+    legend.AddEntry(l3,legend3, "pe")
+    legend.AddEntry(l4,legend4, "pe")
+    #legend.Draw()
     saveas = saveWhere+filename+'.png'
     print saveas
     canvas.SaveAs(saveas)
@@ -151,7 +183,7 @@ def compare_3efficiencies(ntuple1,legend1,ntuple2, legend2,ntuple3, legend3, var
 # Efficiency for a 20 GeV cut on tau Pt 
 ################################################################################
 ## pT plots
-compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','jetPt', 20, [30, 0, 450],#variable, ptcut, binning
+compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','jetPt', 20, "isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1", [30, 0, 450],#variable, ptcut, binning
                     'tau_iso_fakeRate_pT_Jets',#filename
                     "Tau Fake Rate (Jets)",#title
                     "Jet p_{T} (GeV)",#xaxis
@@ -186,22 +218,53 @@ compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,
 #                    "fake rate"
 #)
 
-compare_efficiencies(byLooseCmbIso3,'New DMF (loose)',OldDMF,'Old DMF (tight)','jetPt',20,[30,0,450],
+compare_efficiencies(byLooseCmbIso3,'New DMF (loose)',OldDMF,'Old DMF (tight)','jetPt',20,"isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1", [30,0,450],
                     'tau_DMF_FR_pT',
                     "Jet to Tau Fake Rate",
                     "Jet Tau p_{T} (GeV)",
                     "fake rate"
 )
 
-compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','jetPt',20,[30,0,450],
+compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','jetPt',20,"isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1", [30,0,450],
                     'tau_isono_FR_pT',
                     "Jet to Tau Fake Rate",
                     "Jet p_{T} (GeV)",
                     "fake rate"
 )
 
+compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','jetPt',20,"isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1", [30,0,450],
+                    'tau_isono_FR_pT',
+                    "Jet to Tau Fake Rate",
+                    "Jet p_{T} (GeV)",
+                    "fake rate"
+)
+
+compare_3efficiencies(byLooseCmbIso3,'kOneProng0PiZero',byLooseCmbIso3,'kOneProng1PiZero',byLooseCmbIso3,'kThreeProng0PiZero','jetPt',20,"isFake==1 && decayMode==0","jetIDLoose==1","isFake==1 && decayMode==1","jetIDLoose==1","isFake==1 && decayMode==10","jetIDLoose==1",
+                    [30,0,450],
+                    'decayMode_looseNewDMF_FR_pT',
+                    "Tau Efficiency",
+                    "Jet p_{T} (GeV)",
+                    "efficiency"
+)
+
+compare_3efficiencies(OldDMF,'kOneProng0PiZero',OldDMF,'kOneProng1PiZero',OldDMF,'kThreeProng0PiZero','jetPt',20,"isFake==1 && decayMode==0","jetIDLoose==1","isFake==1 && decayMode==1","jetIDLoose==1","isFake==1 && decayMode==10","jetIDLoose==1",
+                    [30,0,450],
+                    'decayMode_looseOldDMF_FR_pT',
+                    "Tau Efficiency",
+                    "Jet p_{T} (GeV)",
+                    "efficiency"
+)
+
+compare_3efficiencies(NewDMF,'kOneProng0PiZero',NewDMF,'kOneProng1PiZero',NewDMF,'kThreeProng0PiZero','jetPt',20,"isFake==1 && decayMode==0","jetIDLoose==1","isFake==1 && decayMode==1","jetIDLoose==1","isFake==1 && decayMode==10","jetIDLoose==1",
+                    [30,0,450],
+                    'decayMode_nocutNewDMF_FR_pT',
+                    "Tau Efficiency",
+                    "Jet p_{T} (GeV)",
+                    "efficiency"
+)
+
 ## eta plots
-compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','jetEta', 20, [20,-2.4,2.4],#variable, ptcut, binning
+compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','jetEta', 20, "isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1", [20,-2.4,2.4],#variable, ptcut, binning
                     'tau_iso_fakeRate_eta_Jets',#filename
                     "Tau Fake Rate (Jets)",#title
                     "Jet Eta",#xaxis
@@ -229,7 +292,7 @@ compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,
 #                    "fake rate"
 #)
 
-compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','jetEta',20,[30,-2.4,2.4],
+compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','jetEta',20,"isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1", [30,-2.4,2.4],
                     'tau_isono_FR_eta',
                     "Jet to Tau Fake Rate",
                     "Jet Eta",
@@ -237,7 +300,7 @@ compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut
 )
 
 ## nvtx plots
-compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','nvtx', 20, [20,0,35],#variable, ptcut, binning
+compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,'byMediumCombIsoDBCorr3Hits', byTightCmbIso3,'byTightCombIsoDBCorr3Hits','nvtx', 20,"isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1", [20,0,35],#variable, ptcut, binning
                     'tau_iso_fakeRate_nvtx_Jets',#filename
                     "Tau Fake Rate (Jets)",#title
                     "N_{vtx}",#xaxis
@@ -265,7 +328,7 @@ compare_3efficiencies(byLooseCmbIso3, 'byLooseCombIsoDBCorr3Hits', byMedCmbIso3,
 #                    "fake rate"
 #)
 
-compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','nvtx',20,[30,0,35],
+compare_efficiencies(byLooseCmbIso3,'Loose Iso Cut (New DMF)',NewDMF,'No Iso Cut (New DMF)','nvtx',20,"isFake==1","jetIDLoose==1","isFake==1","jetIDLoose==1", [30,0,35],
                     'tau_isono_FR_nvtx',
                     "Jet to Tau Fake Rate",
                     "N_{vtx}",
